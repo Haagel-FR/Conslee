@@ -8,6 +8,7 @@ type ProbePayload = {
   expectHost?: string;
   allowWake?: boolean;
   requireSignature?: boolean;
+  customHeaders?: string;
 };
 
 type ProbeResponse = {
@@ -68,6 +69,7 @@ export function useProxyHealthCheck(service: ServiceStatus) {
     const controllers = new Set<AbortController>();
     const protocol = window.location.protocol === "https:" ? "https:" : "http:";
     const healthPath = (service.healthPath || "").trim();
+    const customHeaders = (service.customHeaders || "").trim();
     const normalizedPath = healthPath
       ? healthPath.startsWith("/")
         ? healthPath
@@ -85,6 +87,7 @@ export function useProxyHealthCheck(service: ServiceStatus) {
             expectHost,
             allowWake,
             requireSignature: true,
+            customHeaders,
           },
           controllers,
         );
@@ -169,6 +172,7 @@ export function useTargetHealthCheck(
       expectHost = "";
     }
 
+    const customHeaders = (service.customHeaders || "").trim();
     const runTargetCheck = async () => {
       try {
         const status = await performServerProbe(
@@ -176,6 +180,7 @@ export function useTargetHealthCheck(
             url: targetToCheck,
             expectHost,
             allowWake: true,
+            customHeaders,
           },
           controllers,
         );

@@ -398,6 +398,14 @@ const CreateServiceModal: React.FC<Props> = ({
                 <code> /</code> {t("serviceCard.healthPathHelp2")} <code>/health</code>. {t("serviceCard.healthPathHelp3")}
               </div>
             </div>
+            <div className="settings-row">
+              <label>{t("serviceCard.CustomHeaderLabel")}</label>
+              <textarea id="create-headers" placeholder='{[{"Authorization": "Basic xxxxxxxxxxx"}]}' defaultValue="" rows={3} />
+              <div className="settings-help">
+                {t("serviceCard.CustomHeaderHelp")}
+                <code> /</code> {t("serviceCard.CustomHeaderHelp2")} <code>/health</code>. {t("serviceCard.CustomHeaderHelp3")}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -481,6 +489,9 @@ const CreateServiceModal: React.FC<Props> = ({
               ) as HTMLInputElement | null;
               const stopInput = document.getElementById(
                 "create-stop"
+              ) as HTMLInputElement | null;
+              const headersInput = document.getElementById(
+                "create-headers"
               ) as HTMLInputElement | null;
 
               const checkboxes = Array.from(
@@ -583,6 +594,7 @@ const CreateServiceModal: React.FC<Props> = ({
               }
 
               let healthPath: string;
+              let customHeaders: string | undefined;
 
 
               if (healthInput === null) {
@@ -596,7 +608,15 @@ const CreateServiceModal: React.FC<Props> = ({
                 return;
               }
 
-
+              if (headersInput?.value.trim()) {
+                try {
+                  const parsed = JSON.parse(headersInput.value.trim());
+                  customHeaders = JSON.stringify(parsed);
+                } catch (error) {
+                  setCreateError(t("createService.errors.customHeadersInvalid"));
+                  return;
+                }
+              }
 
               const body: any = {
                 name: nameInput.value.trim(),
@@ -617,6 +637,10 @@ const CreateServiceModal: React.FC<Props> = ({
 
               if (schedule) {
                 body.schedule = schedule;
+              }
+
+              if (customHeaders) {
+                body.customHeaders = customHeaders;
               }
 
               try {

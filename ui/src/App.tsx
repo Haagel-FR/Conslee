@@ -148,6 +148,7 @@ const App: React.FC = () => {
       targetUrl?: string;
       healthPath?: string;
       startupTimeout?: string;
+      customHeaders?: string;
       host?: string;
       enabled?: boolean;
     },

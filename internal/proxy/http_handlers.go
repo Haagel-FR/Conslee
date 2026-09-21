@@ -27,6 +27,7 @@ type CreateServiceRequest struct {
 	IdleTimeout    string   `json:"idleTimeout"`
 	StartupTimeout string   `json:"startupTimeout"`
 	HealthPath     string   `json:"healthPath"`
+	CustomHeaders  string   `json:"customHeaders,omitempty"`
 	Schedule       *struct {
 		Days  []string `json:"days"`
 		Start string   `json:"start"`
@@ -50,6 +51,7 @@ type UpdateServiceRequest struct {
 	Containers     *[]string `json:"containers,omitempty"`
 	TargetURL      *string   `json:"targetUrl,omitempty"`
 	HealthPath     *string   `json:"healthPath,omitempty"`
+	CustomHeaders  *string   `json:"customHeaders,omitempty"`
 	StartupTimeout *string   `json:"startupTimeout,omitempty"`
 	Host           *string   `json:"host,omitempty"`
 	Enabled        *bool     `json:"enabled,omitempty"`
@@ -61,10 +63,11 @@ const probeSignatureHeader = "X-Conslee-Service"
 // Probe types
 
 type ProbeRequest struct {
-	URL        string `json:"url"`
-	ExpectHost string `json:"expectHost,omitempty"`
-	AllowWake  bool   `json:"allowWake"`
-	RequireSig bool   `json:"requireSignature"`
+	URL           string  `json:"url"`
+	ExpectHost    string  `json:"expectHost,omitempty"`
+	CustomHeaders string `json:"customHeaders,omitempty"`
+	AllowWake     bool    `json:"allowWake"`
+	RequireSig    bool    `json:"requireSignature"`
 }
 
 type ProbeResponse struct {
@@ -108,6 +111,7 @@ func (c *Conslee) serviceStatus(ctx context.Context, svc *ServiceState) (*Servic
 		StartupTimeout: svc.Config.StartupTimeout.String(),
 		TargetURL:      svc.Config.TargetURL,
 		HealthPath:     svc.Config.HealthPath,
+		CustomHeaders:  svc.Config.CustomHeaders,
 	}
 
 	if svc.Config.Schedule != nil && svc.Schedule != nil {
@@ -288,6 +292,14 @@ func (c *Conslee) HandleCreateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.CustomHeaders != "" {
+		var headers []map[string]string
+		if err := json.Unmarshal([]byte(req.CustomHeaders), &headers); err != nil {
+			http.Error(w, "invalid customHeaders:", http.StatusBadRequest)
+			return
+		}
+	}
+
 	var parsedTarget *url.URL
 	if req.TargetURL != "" {
 		u, err := url.Parse(req.TargetURL)
@@ -309,6 +321,7 @@ func (c *Conslee) HandleCreateService(w http.ResponseWriter, r *http.Request) {
 		RawStartupTimeout: req.StartupTimeout,
 		StartupTimeout:    startup,
 		HealthPath:        req.HealthPath,
+		CustomHeaders:     req.CustomHeaders,
 	}
 
 	if req.Schedule != nil {
@@ -492,6 +505,18 @@ func (c *Conslee) HandleUpdateService(w http.ResponseWriter, r *http.Request) {
 		svc.Config.HealthPath = *req.HealthPath
 	}
 
+	// CUSTOM HEADERS
+	if *req.CustomHeaders == "" {
+		svc.Config.CustomHeaders = ""
+	} else if req.CustomHeaders != nil {
+		var headers []map[string]string
+		if err := json.Unmarshal([]byte(*req.CustomHeaders), &headers); err != nil {
+			http.Error(w, "invalid customHeaders", http.StatusBadRequest)
+			return
+		}
+		svc.Config.CustomHeaders = *req.CustomHeaders
+	}
+
 	// STARTUP TIMEOUT
 	if req.StartupTimeout != nil && *req.StartupTimeout != "" {
 		d, err := time.ParseDuration(*req.StartupTimeout)
@@ -585,6 +610,18 @@ func doProbeRequest(ctx context.Context, client *http.Client, method string, req
 
 	if !req.AllowWake {
 		httpReq.Header.Set(probeAllowWakeHeader, "false")
+	}
+
+	if req.CustomHeaders != ""{
+		var headers []map[string]string
+		if err := json.Unmarshal([]byte(req.CustomHeaders), &headers); err != nil {
+			return nil, err
+		}
+		for i := range headers {
+			for k, v := range headers[i] {
+				httpReq.Header.Set(k, v)
+			}
+		}
 	}
 
 	resp, err := client.Do(httpReq)

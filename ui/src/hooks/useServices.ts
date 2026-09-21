@@ -61,6 +61,7 @@ export function useServices() {
         startupTimeout: s.startupTimeout ?? "",
         targetUrl: s.targetUrl ?? "",
         healthPath: s.healthPath ?? "",
+        customHeaders: s.customHeaders ?? "",
         schedule: s.schedule
           ? {
               mode: s.schedule.mode ?? "on_demand",

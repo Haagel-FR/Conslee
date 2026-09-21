@@ -48,6 +48,7 @@ type ServiceConfig struct {
 	RawStartupTimeout string        `yaml:"startup_timeout"`
 	StartupTimeout    time.Duration `yaml:"-"`
 	HealthPath        string        `yaml:"health_path"`
+	CustomHeaders     string        `yaml:"custom_headers,omitempty"`
 }
 
 type Config struct {

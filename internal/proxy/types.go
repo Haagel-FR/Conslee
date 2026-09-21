@@ -67,6 +67,7 @@ type ServiceStatusDTO struct {
 	TargetURL      string              `json:"targetUrl"`
 	HealthPath     string              `json:"healthPath"`
 	Schedule       *ServiceScheduleDTO `json:"schedule,omitempty"`
+	CustomHeaders  string              `json:"customHeaders,omitempty"`
 }
 
 type SystemStatusDTO struct {

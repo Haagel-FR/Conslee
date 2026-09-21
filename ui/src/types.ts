@@ -17,6 +17,7 @@ export type ServiceStatus = {
     startupTimeout: string;
     targetUrl: string;
     healthPath: string;
+    customHeaders?: string;
     schedule?: ServiceSchedule;
 };
 
