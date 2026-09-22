@@ -951,17 +951,17 @@ const ServiceCard: React.FC<Props> = ({
 									const headerJsonInput = e.target.value.trim()
 									if (headerJsonInput === "") {
 										headerJson = ""
+										setCustomHeadersError(null);
 									} else {
 										try {
 											JSON.parse(headerJsonInput)
 											headerJson = headerJsonInput
 											setCustomHeadersError(null);
-										} catch (error) {
-											setCustomHeadersError(t("serviceCard.customHeadersError"));
+											onSaveSettings(service, { customHeaders: headerJson });
+										} catch (e) {
+											setCustomHeadersError(t("serviceCard.customHeadersError: "+e));
 										}
 									}
-
-									onSaveSettings(service, { customHeaders: headerJson });
 								}}
 								disabled={saving}
 								rows={3}
