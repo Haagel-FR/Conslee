@@ -73,6 +73,13 @@ func ensureRunning(ctx context.Context, rt ContainerRuntime, svc *ServiceState) 
 
 // Reverse proxy
 
+// isBrowserHTMLRequest returns true if the request is from a browser
+// expecting an HTML response (vs API call, probe, etc.)
+func isBrowserHTMLRequest(r *http.Request) bool {
+	accept := r.Header.Get("Accept")
+	return strings.Contains(accept, "text/html")
+}
+
 func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	host := r.Host
 	svc, ok := c.reg.GetByHost(host)
@@ -115,6 +122,14 @@ func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+
+		// Show loading page for browser requests when container is not yet running
+		if isBrowserHTMLRequest(r) && !c.isServiceReady(svc) {
+			go ensureRunning(context.Background(), c.rt, svc)
+			serveLoadingPage(w, r, svc, "")
+			return
+		}
+
 		if err := ensureRunning(r.Context(), c.rt, svc); err != nil {
 			log.Printf("ensureRunning error for %s: %v", svc.Config.Name, err)
 			http.Error(w, "backend unavailable", http.StatusBadGateway)
@@ -135,6 +150,28 @@ func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return nil
 	}
 	proxy.ServeHTTP(w, r)
+}
+
+// isServiceReady checks if the service's containers are already running
+func (c *Conslee) isServiceReady(svc *ServiceState) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	names := svc.Config.Containers
+	if len(names) == 0 && svc.Config.ContainerName != "" {
+		names = []string{svc.Config.ContainerName}
+	}
+
+	for _, name := range names {
+		st, err := c.rt.Inspect(ctx, name)
+		if err != nil {
+			continue
+		}
+		if st.Running {
+			return true
+		}
+	}
+	return false
 }
 
 func newSingleHostReverseProxy(target *url.URL, src *http.Request) *httputil.ReverseProxy {
