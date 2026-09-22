@@ -51,7 +51,8 @@
       "stopTimeInvalid": "结束时间必须为HH:MM格式",
       "healthPathInvalid": "健康检查路径必须以\"/\"开头",
       "apiError": "创建服务失败（API错误）",
-      "networkError": "创建服务时网络错误"
+      "networkError": "创建服务时网络错误",
+      "customHeadersInvalid": "无效的JSON格式"
     }
   },
   "serviceCard": {
@@ -99,7 +100,10 @@
     "proxyUnhealthy": "代理层问题",
     "proxyUnhealthyWarning": "反向代理（{{host}}）无响应。请检查nginx/apache在代理和应用程序之间的路由。",
     "targetUnhealthy": "容器层问题",
-    "targetUnhealthyWarning": "应用程序无法从{{target}}的容器获得响应。请检查目标URL和容器状态。"
+    "targetUnhealthyWarning": "应用程序无法从{{target}}的容器获得响应。请检查目标URL和容器状态。",
+    "customHeaderLabel": "自定义请求头",
+    "customHeaderHelp": "可以为健康检查添加自定义HTTP请求头。请以JSON数组格式填写。例如：",
+    "customHeadersError": "无效的JSON格式"
   },
   "serviceList": {
     "empty": "此标签页中没有服务"

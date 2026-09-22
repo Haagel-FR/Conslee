@@ -51,7 +51,8 @@
       "stopTimeInvalid": "La hora de finalización debe estar en formato HH:MM",
       "healthPathInvalid": "La ruta de verificación de salud debe comenzar con \"/\"",
       "apiError": "Error al crear el servicio (error de API)",
-      "networkError": "Error de red al crear el servicio"
+      "networkError": "Error de red al crear el servicio",
+      "customHeadersInvalid": "Formato JSON no válido"
     }
   },
   "serviceCard": {
@@ -99,7 +100,10 @@
     "proxyUnhealthy": "Problema en la capa de proxy",
     "proxyUnhealthyWarning": "El proxy inverso ({{host}}) no responde. Verifique el enrutamiento de nginx/apache entre el proxy y su aplicación.",
     "targetUnhealthy": "Problema en la capa de contenedor",
-    "targetUnhealthyWarning": "La aplicación no recibe respuesta del contenedor en {{target}}. Verifique la URL de destino y el estado del contenedor."
+    "targetUnhealthyWarning": "La aplicación no recibe respuesta del contenedor en {{target}}. Verifique la URL de destino y el estado del contenedor.",
+    "customHeaderLabel": "Encabezados personalizados",
+    "customHeaderHelp": "Puede añadir encabezados HTTP personalizados a la verificación de salud. Especifíquelos como un array JSON. Por ejemplo: ",
+    "customHeadersError": "Formato JSON no válido"
   },
   "serviceList": {
     "empty": "No hay servicios en esta pestaña"

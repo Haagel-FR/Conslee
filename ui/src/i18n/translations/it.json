@@ -51,7 +51,8 @@
       "stopTimeInvalid": "L'ora di fine deve essere nel formato HH:MM",
       "healthPathInvalid": "Il percorso di verifica dello stato deve iniziare con \"/\"",
       "apiError": "Impossibile creare il servizio (errore API)",
-      "networkError": "Errore di rete durante la creazione del servizio"
+      "networkError": "Errore di rete durante la creazione del servizio",
+      "customHeadersInvalid": "Formato JSON non valido"
     }
   },
   "serviceCard": {
@@ -99,7 +100,10 @@
     "proxyUnhealthy": "Problema a livello di proxy",
     "proxyUnhealthyWarning": "Il proxy inverso ({{host}}) non risponde. Verifica il routing nginx/apache tra il proxy e la tua applicazione.",
     "targetUnhealthy": "Problema a livello di container",
-    "targetUnhealthyWarning": "L'applicazione non riceve risposta dal container su {{target}}. Verifica l'URL di destinazione e lo stato del container."
+    "targetUnhealthyWarning": "L'applicazione non riceve risposta dal container su {{target}}. Verifica l'URL di destinazione e lo stato del container.",
+    "customHeaderLabel": "Intestazioni personalizzate",
+    "customHeaderHelp": "Puoi aggiungere intestazioni HTTP personalizzate alla verifica dello stato. Specificale come array JSON. Ad esempio: ",
+    "customHeadersError": "Formato JSON non valido"
   },
   "serviceList": {
     "empty": "Nessun servizio in questa scheda"

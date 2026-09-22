@@ -51,7 +51,8 @@
       "stopTimeInvalid": "Время окончания должно быть в формате HH:MM",
       "healthPathInvalid": "Путь health check должен начинаться с символа \"/\"",
       "apiError": "Не удалось создать сервис (ошибка API)",
-      "networkError": "Ошибка сети при создании сервиса"
+      "networkError": "Ошибка сети при создании сервиса",
+      "customHeadersInvalid": "Неверный формат JSON"
     }
   },
   "serviceCard": {
@@ -99,7 +100,10 @@
     "proxyUnhealthy": "Проблема на участке прокси",
     "proxyUnhealthyWarning": "Прокси ({{host}}) не отвечает. Проверьте конфигурацию nginx/apache и доступность приложения.",
     "targetUnhealthy": "Проблема на участке контейнера",
-    "targetUnhealthyWarning": "Приложение не получает отклик от контейнера по адресу {{target}}. Проверьте Target URL и состояние контейнера."
+    "targetUnhealthyWarning": "Приложение не получает отклик от контейнера по адресу {{target}}. Проверьте Target URL и состояние контейнера.",
+    "customHeaderLabel": "Пользовательские заголовки",
+    "customHeaderHelp": "Вы можете добавлять произвольные HTTP-заголовки к запросам проверки состояния. Укажите их в формате JSON-массива. Например: ",
+    "customHeadersError": "Неверный формат JSON"
   },
   "serviceList": {
     "empty": "Нет сервисов в этой вкладке"
