@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: Build UI
-FROM node:20-alpine AS ui-build
+FROM node:alpine AS ui-build
 WORKDIR /app/ui
 COPY ui/package.json ui/package-lock.json ./
 RUN npm ci
@@ -9,7 +9,7 @@ COPY ui ./
 RUN npm run build
 
 # Stage 2: Build Go Binary
-FROM golang:1.24-alpine AS backend-build
+FROM golang:alpine AS backend-build
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
