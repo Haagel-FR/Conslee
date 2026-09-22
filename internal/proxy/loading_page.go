@@ -12,7 +12,6 @@ const loadingHTML = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="3;url={{ .Path }}">
     <title>Starting {{ .ServiceName }}...</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -76,14 +75,37 @@ const loadingHTML = `<!DOCTYPE html>
         <p class="loading-message">{{ .Message }}</p>
         <div class="loading-spinner"></div>
     </div>
+    <script>
+    (function() {
+        var originalPath = "{{ .OriginalPath }}";
+        var serviceName = "{{ .ServiceName }}";
+        var titleEl = document.querySelector('.loading-title');
+        function poll() {
+            fetch('/api/services/')
+                .then(function(r) { return r.json(); })
+                .then(function(services) {
+                    for (var i = 0; i < services.length; i++) {
+                        if (services[i].name === serviceName && services[i].running === true) {
+                            titleEl.textContent = 'Redirecting...';
+                            window.location.href = originalPath;
+                            return;
+                        }
+                    }
+                })
+                .catch(function() {});
+        }
+        setInterval(poll, 2000);
+    })();
+    </script>
 </body>
 </html>
 `
 
 type loadingPageData struct {
-	ServiceName string
-	Message     string
-	Path        string
+	ServiceName  string
+	Message      string
+	Path         string
+	OriginalPath string
 }
 
 func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState, message string) {
@@ -97,9 +119,10 @@ func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState,
 	}
 
 	data := loadingPageData{
-		ServiceName: svc.Config.Name,
-		Message:     message,
-		Path:        template.URLQueryEscaper(path),
+		ServiceName:  svc.Config.Name,
+		Message:      message,
+		Path:         template.URLQueryEscaper(path),
+		OriginalPath: template.JSEscaper(path),
 	}
 
 	tmpl, err := template.New("loading").Parse(loadingHTML)

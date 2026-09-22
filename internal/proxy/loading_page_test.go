@@ -44,8 +44,8 @@ func TestLoadingPage_ReturnsHTMLForBrowserRequest(t *testing.T) {
 	if !strings.Contains(body, "Starting webapp") {
 		t.Errorf("expected loading page with 'Starting webapp', got: %s", body)
 	}
-	if !strings.Contains(body, `meta http-equiv="refresh"`) {
-		t.Errorf("expected meta refresh in loading page, got: %s", body)
+	if !strings.Contains(body, "window.location.href") {
+		t.Errorf("expected window.location.href in loading page, got: %s", body)
 	}
 	if rec.Header().Get("Content-Type") != "text/html; charset=utf-8" {
 		t.Errorf("expected text/html content type, got %s", rec.Header().Get("Content-Type"))
@@ -145,8 +145,14 @@ func TestLoadingPage_ContainsSpinner(t *testing.T) {
 	if !strings.Contains(body, "loading-spinner") {
 		t.Errorf("expected spinner in loading page, got: %s", body)
 	}
-	if !strings.Contains(body, "loading-container") {
-		t.Errorf("expected loading-container in loading page, got: %s", body)
+	if !strings.Contains(body, "window.location.href") {
+		t.Errorf("expected window.location.href in loading page, got: %s", body)
+	}
+	if !strings.Contains(body, "/api/services/") {
+		t.Errorf("expected /api/services/ polling in loading page, got: %s", body)
+	}
+	if !strings.Contains(body, "Redirecting...") {
+		t.Errorf("expected 'Redirecting...' in loading page, got: %s", body)
 	}
 }
 
