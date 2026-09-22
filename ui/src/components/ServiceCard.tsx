@@ -942,7 +942,7 @@ const ServiceCard: React.FC<Props> = ({
 							</div>
 						</div>
 						<div className="settings-row">
-							<label>{t("serviceCard.CustomHeaderLabel")}</label>
+							<label>{t("serviceCard.customHeaderLabel")}</label>
 							<textarea
 								defaultValue={service.customHeaders || ""}
 								placeholder='[{"Authorization": "Basic xxxxxxxxxxx"}]'
@@ -970,8 +970,7 @@ const ServiceCard: React.FC<Props> = ({
 								<div className="settings-help error-text">{customHeadersError}</div>
 							)}
 							<div className="settings-help">
-								{t("serviceCard.CustomHeaderHelp")}
-								<code> /</code> {t("serviceCard.CustomHeaderHelp2")} <code>/health</code>. {t("serviceCard.CustomHeaderHelp3")}
+								{t("serviceCard.customHeaderHelp")} <code>{'[{"Authorization": "Basic xxxxxxxxxxx"}]'}</code>
 							</div>
 						</div>
 					</div>
