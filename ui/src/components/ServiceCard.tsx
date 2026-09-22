@@ -944,7 +944,7 @@ const ServiceCard: React.FC<Props> = ({
 							<label>{t("serviceCard.CustomHeaderLabel")}</label>
 							<textarea
 								defaultValue={service.customHeaders || ""}
-								placeholder='{[{"Authorization": "Basic xxxxxxxxxxx"}]}'
+								placeholder='[{"Authorization": "Basic xxxxxxxxxxx"}]'
 								onBlur={(e) => {
 									onSaveSettings(service, { customHeaders: e.target.value.trim() });
 								}}
