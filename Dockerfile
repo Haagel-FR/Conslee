@@ -4,7 +4,7 @@
 FROM node:20-alpine AS ui-build
 WORKDIR /app/ui
 COPY ui/package.json ui/package-lock.json ./
-RUN npm ci
+RUN npm install 
 COPY ui ./
 RUN npm run build
 
