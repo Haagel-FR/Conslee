@@ -506,7 +506,7 @@ func (c *Conslee) HandleUpdateService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// CUSTOM HEADERS
-	if *req.CustomHeaders == "" {
+	if req.CustomHeaders != nil && *req.CustomHeaders == "" {
 		svc.Config.CustomHeaders = ""
 	} else if req.CustomHeaders != nil {
 		var headers []map[string]string

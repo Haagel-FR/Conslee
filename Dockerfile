@@ -4,7 +4,7 @@
 FROM node:24-alpine3.24 AS ui-build
 WORKDIR /app/ui
 COPY ui/package.json ui/package-lock.json ./
-RUN npm ci
+RUN npm install 
 COPY ui ./
 RUN npm run build
 
