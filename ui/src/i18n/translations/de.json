@@ -51,7 +51,8 @@
       "stopTimeInvalid": "Die Endzeit muss im Format HH:MM angegeben werden",
       "healthPathInvalid": "Der Health-Check-Pfad muss mit \"/\" beginnen",
       "apiError": "Service konnte nicht erstellt werden (API-Fehler)",
-      "networkError": "Netzwerkfehler beim Erstellen des Services"
+      "networkError": "Netzwerkfehler beim Erstellen des Services",
+      "customHeadersInvalid": "Ungültiges JSON-Format"
     }
   },
   "serviceCard": {
@@ -99,7 +100,10 @@
     "proxyUnhealthy": "Problem auf Proxy-Ebene",
     "proxyUnhealthyWarning": "Reverse-Proxy ({{host}}) antwortet nicht. Überprüfen Sie das nginx/apache-Routing zwischen dem Proxy und Ihrer Anwendung.",
     "targetUnhealthy": "Problem auf Container-Ebene",
-    "targetUnhealthyWarning": "Die Anwendung erhält keine Antwort vom Container unter {{target}}. Überprüfen Sie die Ziel-URL und den Container-Status."
+    "targetUnhealthyWarning": "Die Anwendung erhält keine Antwort vom Container unter {{target}}. Überprüfen Sie die Ziel-URL und den Container-Status.",
+    "customHeaderLabel": "Benutzerdefinierte Header",
+    "customHeaderHelp": "Sie können dem Health-Check benutzerdefinierte HTTP-Header hinzufügen. Geben Sie diese als JSON-Array an. Zum Beispiel: ",
+    "customHeadersError": "Ungültiges JSON-Format"
   },
   "serviceList": {
     "empty": "Keine Services in diesem Tab"

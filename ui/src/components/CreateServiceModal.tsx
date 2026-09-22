@@ -400,11 +400,10 @@ const CreateServiceModal: React.FC<Props> = ({
               </div>
             </div>
             <div className="settings-row">
-              <label>{t("serviceCard.CustomHeaderLabel")}</label>
-              <textarea id="create-headers" placeholder='{[{"Authorization": "Basic xxxxxxxxxxx"}]}' defaultValue="" rows={3} />
+              <label>{t("serviceCard.customHeaderLabel")}</label>
+              <textarea id="create-headers" placeholder='[{"Authorization": "Basic xxxxxxxxxxx"}]' defaultValue="" rows={3} />
               <div className="settings-help">
-                {t("serviceCard.CustomHeaderHelp")}
-                <code> /</code> {t("serviceCard.CustomHeaderHelp2")} <code>/health</code>. {t("serviceCard.CustomHeaderHelp3")}
+                {t("serviceCard.customHeaderHelp")} <code>{'[{"Authorization": "Basic xxxxxxxxxxx"}]'}</code>
               </div>
             </div>
           </div>

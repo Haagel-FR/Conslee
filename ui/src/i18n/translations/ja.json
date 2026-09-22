@@ -51,7 +51,8 @@
       "stopTimeInvalid": "終了時刻はHH:MM形式である必要があります",
       "healthPathInvalid": "ヘルスチェックパスは\"/\"で始まる必要があります",
       "apiError": "サービスの作成に失敗しました（APIエラー）",
-      "networkError": "サービスの作成中にネットワークエラーが発生しました"
+      "networkError": "サービスの作成中にネットワークエラーが発生しました",
+      "customHeadersInvalid": "不正なJSON形式です"
     }
   },
   "serviceCard": {
@@ -99,7 +100,10 @@
     "proxyUnhealthy": "プロキシ層の問題",
     "proxyUnhealthyWarning": "リバースプロキシ（{{host}}）が応答していません。プロキシとアプリケーション間のnginx/apacheルーティングを確認してください。",
     "targetUnhealthy": "コンテナ層の問題",
-    "targetUnhealthyWarning": "アプリケーションが{{target}}のコンテナから応答を受け取れません。ターゲットURLとコンテナの状態を確認してください。"
+    "targetUnhealthyWarning": "アプリケーションが{{target}}のコンテナから応答を受け取れません。ターゲットURLとコンテナの状態を確認してください。",
+    "customHeaderLabel": "カスタムヘッダー",
+    "customHeaderHelp": "ヘルスチェックの際に任意のHTTPヘッダーを追加できます。JSON形式での配列で記述してください。 例: ",
+    "customHeadersError": "不正なJSON形式です"
   },
   "serviceList": {
     "empty": "このタブにサービスがありません"

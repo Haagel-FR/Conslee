@@ -51,7 +51,8 @@
       "stopTimeInvalid": "Stop time must be in HH:MM format",
       "healthPathInvalid": "Health check path must start with \"/\"",
       "apiError": "Failed to create service (API error)",
-      "networkError": "Network error while creating service"
+      "networkError": "Network error while creating service",
+      "customHeadersInvalid": "Invalid JSON format"
     }
   },
   "serviceCard": {
@@ -99,7 +100,10 @@
     "proxyUnhealthy": "Proxy layer issue",
     "proxyUnhealthyWarning": "Reverse proxy ({{host}}) is not responding. Check nginx/apache routing between the proxy and your application.",
     "targetUnhealthy": "Container layer issue",
-    "targetUnhealthyWarning": "The application gets no response from the container at {{target}}. Check the Target URL and container state."
+    "targetUnhealthyWarning": "The application gets no response from the container at {{target}}. Check the Target URL and container state.",
+    "customHeaderLabel": "Custom headers",
+    "customHeaderHelp": "You can add custom HTTP headers to health check requests. Specify them as a JSON array. For example: ",
+    "customHeadersError": "Invalid JSON format"
   },
   "serviceList": {
     "empty": "No services in this tab"
