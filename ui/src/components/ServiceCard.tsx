@@ -959,7 +959,7 @@ const ServiceCard: React.FC<Props> = ({
 											setCustomHeadersError(null);
 											onSaveSettings(service, { customHeaders: headerJson });
 										} catch (e) {
-											setCustomHeadersError(t("serviceCard.customHeadersError: "+e));
+											setCustomHeadersError(t("serviceCard.customHeadersError") + ": " + e);
 										}
 									}
 								}}
