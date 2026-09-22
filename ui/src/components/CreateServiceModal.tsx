@@ -123,12 +123,13 @@ const CreateServiceModal: React.FC<Props> = ({
 
     if (showAdvancedCreate) {
       inner.style.maxHeight = "none";
-      const fullHeight = inner.scrollHeight;
+      //const fullHeight = inner.scrollHeight;
 
       inner.style.maxHeight = "0px";
       inner.getBoundingClientRect();
 
-      inner.style.maxHeight = `${fullHeight}px`;
+      //inner.style.maxHeight = `${fullHeight}px`;
+      inner.style.maxHeight = "100%";
       inner.style.opacity = "1";
       inner.style.marginTop = "12px";
     } else {
