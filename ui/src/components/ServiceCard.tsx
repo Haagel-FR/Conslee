@@ -130,6 +130,7 @@ const ServiceCard: React.FC<Props> = ({
 	const [hostHint, setHostHint] = useState<string | null>(null);
 	const [idleTimeoutError, setIdleTimeoutError] = useState<string | null>(null);
 	const [startupTimeoutError, setStartupTimeoutError] = useState<string | null>(null);
+	const [customHeadersError, setCustomHeadersError] = useState<string | null>(null);
 	const proxyHealth = useProxyHealthCheck(service);
 	const targetHealth = useTargetHealthCheck(service, proxyHealth);
 	const targetInputRef = useRef<HTMLInputElement | null>(null);
@@ -946,11 +947,28 @@ const ServiceCard: React.FC<Props> = ({
 								defaultValue={service.customHeaders || ""}
 								placeholder='[{"Authorization": "Basic xxxxxxxxxxx"}]'
 								onBlur={(e) => {
-									onSaveSettings(service, { customHeaders: e.target.value.trim() });
+									let headerJson: string = ""
+									const headerJsonInput = e.target.value.trim()
+									if (headerJsonInput === "") {
+										headerJson = ""
+									} else {
+										try {
+											JSON.parse(headerJsonInput)
+											headerJson = headerJsonInput
+											setCustomHeadersError(null);
+										} catch (error) {
+											setCustomHeadersError(t("serviceCard.customHeadersError"));
+										}
+									}
+
+									onSaveSettings(service, { customHeaders: headerJson });
 								}}
 								disabled={saving}
 								rows={3}
 							/>
+							{customHeadersError && (
+								<div className="settings-help error-text">{customHeadersError}</div>
+							)}
 							<div className="settings-help">
 								{t("serviceCard.CustomHeaderHelp")}
 								<code> /</code> {t("serviceCard.CustomHeaderHelp2")} <code>/health</code>. {t("serviceCard.CustomHeaderHelp3")}
