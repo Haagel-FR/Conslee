@@ -168,7 +168,8 @@ const loadingHTML = `<!DOCTYPE html>
                     updateStep(stepStarting);
                     return;
                 }
-                var body = {url: svc.targetUrl, requireSignature: true};
+                var url = "https://"+svc.host+svc.healthPath;
+                var body = {url: url, requireSignature: true};
                 if (svc.customHeaders) {
                     try { body.customHeaders = svc.customHeaders; } catch(e) {}
                 }
