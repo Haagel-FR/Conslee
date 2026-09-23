@@ -48,7 +48,7 @@ func TestStartupPage_RedirectsToStartupPath(t *testing.T) {
 		t.Errorf("expected path query param in Location, got %s", location)
 	}
 	if !strings.Contains(location, "service=webapp") {
-		t.Errorf("expected service query param in Location, got %s", location)
+		t.Errorf("expected service=webapp in Location, got %s", location)
 	}
 }
 
@@ -71,7 +71,7 @@ func TestStartupPage_Handler(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fdashboard&service=webapp", nil)
+	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fdashboard", nil)
 
 	c.HandleStartupPage(rec, req)
 
@@ -86,14 +86,47 @@ func TestStartupPage_Handler(t *testing.T) {
 	if !strings.Contains(body, "window.location.href") {
 		t.Errorf("expected window.location.href in HTML, got: %s", body)
 	}
-	if !strings.Contains(body, "Starting webapp") {
-		t.Errorf("expected 'Starting webapp' in HTML, got: %s", body)
-	}
+	// JS should poll /api/services to get service info
 	if !strings.Contains(body, "/api/services") {
-		t.Errorf("expected /api/services polling in HTML, got: %s", body)
+		t.Errorf("expected /api/services poll in HTML, got: %s", body)
 	}
-	if !strings.Contains(body, "URLSearchParams") {
-		t.Errorf("expected URLSearchParams in HTML, got: %s", body)
+	if !strings.Contains(body, "/api/probes") {
+		t.Errorf("expected /api/probes POST in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "requireSignature") {
+		t.Errorf("expected 'requireSignature' in HTML polling logic, got: %s", body)
+	}
+
+	// 3-step progress assertions
+	if !strings.Contains(body, "loading-steps") {
+		t.Errorf("expected 'loading-steps' class in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "loading-step") {
+		t.Errorf("expected 'loading-step' class in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "loading-step-active") {
+		t.Errorf("expected 'loading-step-active' class in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "loading-step-completed") {
+		t.Errorf("expected 'loading-step-completed' in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "Starting service...") {
+		t.Errorf("expected 'Starting service...' step text in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "Waiting service...") {
+		t.Errorf("expected 'Waiting service...' step text in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "Redirecting...") {
+		t.Errorf("expected 'Redirecting...' step text in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "step-starting") {
+		t.Errorf("expected 'step-starting' id in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "step-waiting") {
+		t.Errorf("expected 'step-waiting' id in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "step-redirecting") {
+		t.Errorf("expected 'step-redirecting' id in HTML, got: %s", body)
 	}
 }
 
@@ -102,7 +135,7 @@ func TestStartupPage_HandlerWithPath(t *testing.T) {
 	_ = c.rt.(*mockContainerRuntime)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fsome%2Fpage&service=nonexistent", nil)
+	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fsome%2Fpage", nil)
 
 	c.HandleStartupPage(rec, req)
 
@@ -116,6 +149,10 @@ func TestStartupPage_HandlerWithPath(t *testing.T) {
 	}
 	if !strings.Contains(body, "Starting Service") {
 		t.Errorf("expected 'Starting Service' in HTML, got: %s", body)
+	}
+	// JS should poll /api/services
+	if !strings.Contains(body, "/api/services") {
+		t.Errorf("expected /api/services poll in HTML, got: %s", body)
 	}
 }
 
