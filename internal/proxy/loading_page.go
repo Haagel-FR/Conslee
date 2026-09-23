@@ -81,7 +81,7 @@ const loadingHTML = `<!DOCTYPE html>
         var serviceName = "{{ .ServiceName }}";
         var titleEl = document.querySelector('.loading-title');
         function poll() {
-            fetch('/api/services/')
+            fetch('/api/services')
                 .then(function(r) { return r.json(); })
                 .then(function(services) {
                     for (var i = 0; i < services.length; i++) {
