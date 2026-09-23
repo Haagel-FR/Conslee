@@ -128,6 +128,7 @@ func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			go ensureRunning(context.Background(), c.rt, svc)
 			query := url.Values{}
 			query.Set("path", r.URL.RequestURI())
+			query.Set("service", svc.Config.Name)
 			http.Redirect(w, r, StartupPath+"?"+query.Encode(), http.StatusFound)
 			return
 		}

@@ -47,15 +47,8 @@ func TestStartupPage_RedirectsToStartupPath(t *testing.T) {
 	if !strings.Contains(location, "path=%2F") {
 		t.Errorf("expected path query param in Location, got %s", location)
 	}
-	// Verify no service/target/customHeaders in query
-	if strings.Contains(location, "service=") {
-		t.Errorf("should not have service query param, got %s", location)
-	}
-	if strings.Contains(location, "target=") {
-		t.Errorf("should not have target query param, got %s", location)
-	}
-	if strings.Contains(location, "customHeaders=") {
-		t.Errorf("should not have customHeaders query param, got %s", location)
+	if !strings.Contains(location, "service=webapp") {
+		t.Errorf("expected service=webapp in Location, got %s", location)
 	}
 }
 

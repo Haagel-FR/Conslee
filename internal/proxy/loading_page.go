@@ -132,6 +132,7 @@ const loadingHTML = `<!DOCTYPE html>
     (function() {
         var params = new URLSearchParams(window.location.search);
         var originalPath = params.get('path') || '/';
+        var serviceName = '{{ .ServiceName }}';
         var stepStarting = document.getElementById('step-starting');
         var stepWaiting = document.getElementById('step-waiting');
         var stepRedirecting = document.getElementById('step-redirecting');
@@ -156,45 +157,40 @@ const loadingHTML = `<!DOCTYPE html>
                     updateStep(stepStarting);
                     return;
                 }
-                var allHealthy = true;
-                var anyRefused = false;
-                var pending = services.length;
+                var svc = null;
                 for (var i = 0; i < services.length; i++) {
-                    var svc = services[i];
-                    var body = {url: svc.targetUrl, requireSignature: true};
-                    if (svc.customHeaders) {
-                        try { body.customHeaders = svc.customHeaders; } catch(e) {}
+                    if (services[i].name === serviceName) {
+                        svc = services[i];
+                        break;
                     }
-                    fetch('/api/probes', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(body)
-                    })
-                    .then(function(r) { return r.json(); })
-                    .then(function(result) {
-                        pending--;
-                        if (result.status === 'healthy') {
-                            if (pending === 0 && allHealthy) {
-                                updateStep(stepRedirecting);
-                                window.location.href = originalPath;
-                            }
-                        } else if (result.error && (result.error.indexOf('connection') !== -1 || result.error.indexOf('refused') !== -1)) {
-                            anyRefused = true;
-                            allHealthy = false;
-                        } else {
-                            allHealthy = false;
-                        }
-                    })
-                    .catch(function() {
-                        pending--;
-                        allHealthy = false;
-                    });
                 }
-                if (allHealthy && anyRefused) {
+                if (!svc) {
                     updateStep(stepStarting);
-                } else if (!allHealthy) {
-                    updateStep(stepWaiting);
+                    return;
                 }
+                var body = {url: svc.targetUrl, requireSignature: true};
+                if (svc.customHeaders) {
+                    try { body.customHeaders = svc.customHeaders; } catch(e) {}
+                }
+                fetch('/api/probes', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.status === 'healthy') {
+                        updateStep(stepRedirecting);
+                        window.location.href = originalPath;
+                    } else if (result.error && (result.error.indexOf('connection') !== -1 || result.error.indexOf('refused') !== -1)) {
+                        updateStep(stepStarting);
+                    } else {
+                        updateStep(stepWaiting);
+                    }
+                })
+                .catch(function() {
+                    updateStep(stepStarting);
+                });
             })
             .catch(function() {
                 updateStep(stepStarting);
@@ -256,8 +252,15 @@ func (c *Conslee) HandleStartupPage(w http.ResponseWriter, r *http.Request) {
 		path = "/"
 	}
 
-	_ = path // path is used in JS via query parameter
+	serviceName := r.URL.Query().Get("service")
+
+	var svc *ServiceState
+	if serviceName != "" {
+		if s, ok := c.reg.GetByName(serviceName); ok {
+			svc = s
+		}
+	}
 
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	serveLoadingPage(w, r, nil, "")
+	serveLoadingPage(w, r, svc, "")
 }
