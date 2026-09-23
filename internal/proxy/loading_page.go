@@ -180,7 +180,7 @@ const loadingHTML = `<!DOCTYPE html>
                 })
                 .then(function(r) { return r.json(); })
                 .then(function(result) {
-                    if (result.status === 'healthy') {
+                    if (result.status === 'healthy' && result.statusCode === 200) {
                         updateStep(stepRedirecting);
                         window.location.href = originalPath;
                     } else if (result.error && (result.error.indexOf('connection') !== -1 || result.error.indexOf('refused') !== -1)) {
