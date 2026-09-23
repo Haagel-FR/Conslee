@@ -123,10 +123,13 @@ func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Show loading page for browser requests when container is not yet running
+		// Redirect to startup page for browser requests when container is not yet running
 		if isBrowserHTMLRequest(r) && !c.isServiceReady(svc) {
 			go ensureRunning(context.Background(), c.rt, svc)
-			serveLoadingPage(w, r, svc, "")
+			query := url.Values{}
+			query.Set("path", r.URL.RequestURI())
+			query.Set("service", svc.Config.Name)
+			http.Redirect(w, r, StartupPath+"?"+query.Encode(), http.StatusFound)
 			return
 		}
 

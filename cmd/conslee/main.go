@@ -114,6 +114,9 @@ func main() {
 	// Static files
 	mux.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("./ui/dist"))))
 
+	// Startup page (must be before catch-all)
+	mux.HandleFunc(proxy.StartupPath, p.HandleStartupPage)
+
 	// Reverse proxy
 	mux.Handle("/", p)
 
