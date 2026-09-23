@@ -106,7 +106,6 @@ func (c *Conslee) serviceStatus(ctx context.Context, svc *ServiceState) (*Servic
 		Mode:           svc.Config.Mode,
 		Enabled:        !svc.Config.Disabled,
 		Running:        running,
-		Healthy:        svc.Healthy,
 		LastActivity:   svc.LastActivity,
 		IdleTimeout:    svc.Config.IdleTimeout.String(),
 		StartupTimeout: svc.Config.StartupTimeout.String(),
@@ -225,7 +224,6 @@ func (c *Conslee) stopServiceContainers(ctx context.Context, svc *ServiceState) 
 			log.Printf("stop %s error: %v", n, err)
 		}
 	}
-	svc.Healthy = false
 }
 
 // POST /api/services

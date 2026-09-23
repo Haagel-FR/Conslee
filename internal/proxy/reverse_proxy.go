@@ -129,6 +129,12 @@ func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			query := url.Values{}
 			query.Set("path", r.URL.RequestURI())
 			query.Set("service", svc.Config.Name)
+			if svc.Target != nil {
+				query.Set("target", svc.Target.String())
+			}
+			if svc.Config.CustomHeaders != "" {
+				query.Set("customHeaders", svc.Config.CustomHeaders)
+			}
 			http.Redirect(w, r, StartupPath+"?"+query.Encode(), http.StatusFound)
 			return
 		}
@@ -138,8 +144,7 @@ func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "backend unavailable", http.StatusBadGateway)
 			return
 		}
-		svc.Healthy = true
-		}
+	}
 
 	if svc.Target == nil {
 		http.Error(w, "service has no target configured", http.StatusServiceUnavailable)

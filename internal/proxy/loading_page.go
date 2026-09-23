@@ -133,6 +133,8 @@ const loadingHTML = `<!DOCTYPE html>
         var params = new URLSearchParams(window.location.search);
         var originalPath = params.get('path') || '/';
         var serviceName = params.get('service') || '';
+        var target = params.get('target') || '';
+        var customHeaders = params.get('customHeaders') || '';
         var stepStarting = document.getElementById('step-starting');
         var stepWaiting = document.getElementById('step-waiting');
         var stepRedirecting = document.getElementById('step-redirecting');
@@ -150,28 +152,36 @@ const loadingHTML = `<!DOCTYPE html>
             }
         }
         function poll() {
-            fetch('/api/services')
-                .then(function(r) { return r.json(); })
-                .then(function(services) {
-                    for (var i = 0; i < services.length; i++) {
-                        if (serviceName === '' || services[i].name === serviceName) {
-                            if (services[i].running === false) {
-                                updateStep(stepStarting);
-                                return;
-                            }
-                            if (services[i].running === true && services[i].healthy === false) {
-                                updateStep(stepWaiting);
-                                return;
-                            }
-                            if (services[i].running === true && services[i].healthy === true) {
-                                updateStep(stepRedirecting);
-                                window.location.href = originalPath;
-                                return;
-                            }
-                        }
-                    }
-                })
-                .catch(function() {});
+            if (!target) {
+                updateStep(stepStarting);
+                return;
+            }
+            var body = {url: target, requireSignature: true};
+            if (customHeaders) {
+                try { body.customHeaders = customHeaders; } catch(e) {}
+            }
+            fetch('/api/probes', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                if (result.error && (result.error.indexOf('connection') !== -1 || result.error.indexOf('refused') !== -1)) {
+                    updateStep(stepStarting);
+                    return;
+                }
+                if (result.status === 'unhealthy') {
+                    updateStep(stepWaiting);
+                    return;
+                }
+                if (result.status === 'healthy') {
+                    updateStep(stepRedirecting);
+                    window.location.href = originalPath;
+                    return;
+                }
+            })
+            .catch(function() {});
         }
         setInterval(poll, 2000);
     })();
@@ -181,11 +191,12 @@ const loadingHTML = `<!DOCTYPE html>
 `
 
 type loadingPageData struct {
-	ServiceName string
-	Message     string
+	ServiceName   string
+	Message       string
+	CustomHeaders string
 }
 
-func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState, message string) {
+func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState, message, customHeaders string) {
 	serviceName := "Service"
 	if svc != nil {
 		serviceName = svc.Config.Name
@@ -196,8 +207,9 @@ func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState,
 	}
 
 	data := loadingPageData{
-		ServiceName: serviceName,
-		Message:     message,
+		ServiceName:   serviceName,
+		Message:       message,
+		CustomHeaders: customHeaders,
 	}
 
 	tmpl, err := template.New("loading").Parse(loadingHTML)
@@ -239,6 +251,8 @@ func (c *Conslee) HandleStartupPage(w http.ResponseWriter, r *http.Request) {
 
 	_ = path // path is used in JS via query parameter
 
+	customHeaders := r.URL.Query().Get("customHeaders")
+
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	serveLoadingPage(w, r, svc, "")
+	serveLoadingPage(w, r, svc, "", customHeaders)
 }
