@@ -47,11 +47,15 @@ func TestStartupPage_RedirectsToStartupPath(t *testing.T) {
 	if !strings.Contains(location, "path=%2F") {
 		t.Errorf("expected path query param in Location, got %s", location)
 	}
-	if !strings.Contains(location, "service=webapp") {
-		t.Errorf("expected service query param in Location, got %s", location)
+	// Verify no service/target/customHeaders in query
+	if strings.Contains(location, "service=") {
+		t.Errorf("should not have service query param, got %s", location)
 	}
-	if !strings.Contains(location, "target=http") {
-		t.Errorf("expected target query param in Location, got %s", location)
+	if strings.Contains(location, "target=") {
+		t.Errorf("should not have target query param, got %s", location)
+	}
+	if strings.Contains(location, "customHeaders=") {
+		t.Errorf("should not have customHeaders query param, got %s", location)
 	}
 }
 
@@ -74,7 +78,7 @@ func TestStartupPage_Handler(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fdashboard&service=webapp", nil)
+	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fdashboard", nil)
 
 	c.HandleStartupPage(rec, req)
 
@@ -89,8 +93,9 @@ func TestStartupPage_Handler(t *testing.T) {
 	if !strings.Contains(body, "window.location.href") {
 		t.Errorf("expected window.location.href in HTML, got: %s", body)
 	}
-	if !strings.Contains(body, "Starting webapp") {
-		t.Errorf("expected 'Starting webapp' in HTML, got: %s", body)
+	// JS should poll /api/services to get service info
+	if !strings.Contains(body, "/api/services") {
+		t.Errorf("expected /api/services poll in HTML, got: %s", body)
 	}
 	if !strings.Contains(body, "/api/probes") {
 		t.Errorf("expected /api/probes POST in HTML, got: %s", body)
@@ -132,88 +137,12 @@ func TestStartupPage_Handler(t *testing.T) {
 	}
 }
 
-func TestStartupPage_RedirectWithCustomHeaders(t *testing.T) {
-	c := newTestConslee(t)
-	_ = c.rt.(*mockContainerRuntime)
-
-	customHeaders := `[{"Authorization":"Bearer my-token"}]`
-	targetURL, _ := url.Parse("http://localhost:3000")
-	c.reg.Add("webapp.local", &ServiceState{
-		Config: config.ServiceConfig{
-			Name:           "webapp",
-			Host:           "webapp.local",
-			Containers:     []string{"webapp-container"},
-			TargetURL:      "http://localhost:3000",
-			CustomHeaders:  customHeaders,
-			Mode:           "on_demand",
-			StartupTimeout: 30 * time.Second,
-		},
-		Target:       targetURL,
-		LastActivity: time.Now(),
-	})
-
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9")
-	req.Host = "webapp.local"
-
-	c.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusFound {
-		t.Fatalf("expected 302 redirect, got %d: %s", rec.Code, rec.Body.String())
-	}
-
-	location := rec.Header().Get("Location")
-	if !strings.Contains(location, StartupPath) {
-		t.Errorf("expected redirect to %s, got %s", StartupPath, location)
-	}
-	if !strings.Contains(location, "customHeaders=") {
-		t.Errorf("expected customHeaders query param in Location, got %s", location)
-	}
-	if !strings.Contains(location, "Bearer") {
-		t.Errorf("expected customHeaders value in Location, got %s", location)
-	}
-}
-
-func TestStartupPage_HandlerWithCustomHeaders(t *testing.T) {
-	c := newTestConslee(t)
-	_ = c.rt.(*mockContainerRuntime)
-
-	customHeaders := `[{"Authorization":"Bearer my-token"}]`
-	q := url.Values{}
-	q.Set("path", "/dashboard")
-	q.Set("service", "webapp")
-	q.Set("customHeaders", customHeaders)
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, StartupPath+"?"+q.Encode(), nil)
-
-	c.HandleStartupPage(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
-	}
-
-	body := rec.Body.String()
-	// JS reads customHeaders from URL params
-	if !strings.Contains(body, "params.get('customHeaders')") {
-		t.Errorf("expected JS to read customHeaders from URL params, got: %s", body)
-	}
-	// JS includes customHeaders in the probe body
-	if !strings.Contains(body, "body.customHeaders") {
-		t.Errorf("expected body.customHeaders in JS, got: %s", body)
-	}
-	// The conditional check pattern
-	if !strings.Contains(body, "if (customHeaders)") {
-		t.Errorf("expected 'if (customHeaders)' check in JS, got: %s", body)
-	}
-}
-
 func TestStartupPage_HandlerWithPath(t *testing.T) {
 	c := newTestConslee(t)
 	_ = c.rt.(*mockContainerRuntime)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fsome%2Fpage&service=nonexistent", nil)
+	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fsome%2Fpage", nil)
 
 	c.HandleStartupPage(rec, req)
 
@@ -227,6 +156,10 @@ func TestStartupPage_HandlerWithPath(t *testing.T) {
 	}
 	if !strings.Contains(body, "Starting Service") {
 		t.Errorf("expected 'Starting Service' in HTML, got: %s", body)
+	}
+	// JS should poll /api/services
+	if !strings.Contains(body, "/api/services") {
+		t.Errorf("expected /api/services poll in HTML, got: %s", body)
 	}
 }
 

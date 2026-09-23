@@ -132,9 +132,6 @@ const loadingHTML = `<!DOCTYPE html>
     (function() {
         var params = new URLSearchParams(window.location.search);
         var originalPath = params.get('path') || '/';
-        var serviceName = params.get('service') || '';
-        var target = params.get('target') || '';
-        var customHeaders = params.get('customHeaders') || '';
         var stepStarting = document.getElementById('step-starting');
         var stepWaiting = document.getElementById('step-waiting');
         var stepRedirecting = document.getElementById('step-redirecting');
@@ -152,36 +149,56 @@ const loadingHTML = `<!DOCTYPE html>
             }
         }
         function poll() {
-            if (!target) {
-                updateStep(stepStarting);
-                return;
-            }
-            var body = {url: target, requireSignature: true};
-            if (customHeaders) {
-                try { body.customHeaders = customHeaders; } catch(e) {}
-            }
-            fetch('/api/probes', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            })
+            fetch('/api/services')
             .then(function(r) { return r.json(); })
-            .then(function(result) {
-                if (result.error && (result.error.indexOf('connection') !== -1 || result.error.indexOf('refused') !== -1)) {
+            .then(function(services) {
+                if (!Array.isArray(services) || services.length === 0) {
                     updateStep(stepStarting);
                     return;
                 }
-                if (result.status === 'unhealthy') {
-                    updateStep(stepWaiting);
-                    return;
+                var allHealthy = true;
+                var anyRefused = false;
+                var pending = services.length;
+                for (var i = 0; i < services.length; i++) {
+                    var svc = services[i];
+                    var body = {url: svc.targetUrl, requireSignature: true};
+                    if (svc.customHeaders) {
+                        try { body.customHeaders = svc.customHeaders; } catch(e) {}
+                    }
+                    fetch('/api/probes', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(body)
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(result) {
+                        pending--;
+                        if (result.status === 'healthy') {
+                            if (pending === 0 && allHealthy) {
+                                updateStep(stepRedirecting);
+                                window.location.href = originalPath;
+                            }
+                        } else if (result.error && (result.error.indexOf('connection') !== -1 || result.error.indexOf('refused') !== -1)) {
+                            anyRefused = true;
+                            allHealthy = false;
+                        } else {
+                            allHealthy = false;
+                        }
+                    })
+                    .catch(function() {
+                        pending--;
+                        allHealthy = false;
+                    });
                 }
-                if (result.status === 'healthy') {
-                    updateStep(stepRedirecting);
-                    window.location.href = originalPath;
-                    return;
+                if (allHealthy && anyRefused) {
+                    updateStep(stepStarting);
+                } else if (!allHealthy) {
+                    updateStep(stepWaiting);
                 }
             })
-            .catch(function() {});
+            .catch(function() {
+                updateStep(stepStarting);
+            });
         }
         setInterval(poll, 2000);
     })();
@@ -193,10 +210,9 @@ const loadingHTML = `<!DOCTYPE html>
 type loadingPageData struct {
 	ServiceName   string
 	Message       string
-	CustomHeaders string
 }
 
-func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState, message, customHeaders string) {
+func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState, message string) {
 	serviceName := "Service"
 	if svc != nil {
 		serviceName = svc.Config.Name
@@ -207,9 +223,8 @@ func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState,
 	}
 
 	data := loadingPageData{
-		ServiceName:   serviceName,
-		Message:       message,
-		CustomHeaders: customHeaders,
+		ServiceName: serviceName,
+		Message:     message,
 	}
 
 	tmpl, err := template.New("loading").Parse(loadingHTML)
@@ -229,7 +244,7 @@ func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState,
 }
 
 // HandleStartupPage serves the loading page for the /__conslee_startup__ path.
-// The original path and service name are read from query parameters.
+// The original path is read from query parameters.
 func (c *Conslee) HandleStartupPage(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != StartupPath {
 		http.NotFound(w, r)
@@ -240,19 +255,9 @@ func (c *Conslee) HandleStartupPage(w http.ResponseWriter, r *http.Request) {
 	if path == "" {
 		path = "/"
 	}
-	serviceName := r.URL.Query().Get("service")
-
-	var svc *ServiceState
-	if serviceName != "" {
-		if s, ok := c.reg.GetByName(serviceName); ok {
-			svc = s
-		}
-	}
 
 	_ = path // path is used in JS via query parameter
 
-	customHeaders := r.URL.Query().Get("customHeaders")
-
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	serveLoadingPage(w, r, svc, "", customHeaders)
+	serveLoadingPage(w, r, nil, "")
 }
