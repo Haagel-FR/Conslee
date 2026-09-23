@@ -169,7 +169,7 @@ const loadingHTML = `<!DOCTYPE html>
                     return;
                 }
                 var url = "https://"+svc.host+svc.healthPath;
-                var body = {url: url, requireSignature: true};
+                var body = {url: url, requireSignature: true, allowWake: true};
                 if (svc.customHeaders) {
                     try { body.customHeaders = svc.customHeaders; } catch(e) {}
                 }
