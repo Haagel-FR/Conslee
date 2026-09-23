@@ -1,20 +1,31 @@
-# syntax=docker/dockerfile:1
-
 # Stage 1: Build UI
 FROM node:24-alpine3.24 AS ui-build
+
 WORKDIR /app/ui
+
 COPY ui/package.json ui/package-lock.json ./
 RUN npm ci
+
 COPY ui ./
 RUN npm run build
 
+
 # Stage 2: Build Go Binary
 FROM golang:1.27.1-alpine3.24 AS backend-build
+
 WORKDIR /app
+
 COPY go.mod go.sum ./
 RUN go mod download
+
 COPY . ./
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o conslee ./cmd/conslee
+
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -o conslee ./cmd/conslee
+
 
 # Stage 3: Final Image
 FROM alpine:3.24
