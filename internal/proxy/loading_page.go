@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const StartupPath = "/__conslee_startup__"
+
 const loadingHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,18 +79,21 @@ const loadingHTML = `<!DOCTYPE html>
     </div>
     <script>
     (function() {
-        var originalPath = "{{ .OriginalPath }}";
-        var serviceName = "{{ .ServiceName }}";
+        var params = new URLSearchParams(window.location.search);
+        var originalPath = params.get('path') || '/';
+        var serviceName = params.get('service') || '';
         var titleEl = document.querySelector('.loading-title');
         function poll() {
             fetch('/api/services')
                 .then(function(r) { return r.json(); })
                 .then(function(services) {
                     for (var i = 0; i < services.length; i++) {
-                        if (services[i].name === serviceName && services[i].running === true) {
-                            titleEl.textContent = 'Redirecting...';
-                            window.location.href = originalPath;
-                            return;
+                        if (serviceName === '' || services[i].name === serviceName) {
+                            if (services[i].running === true) {
+                                titleEl.textContent = 'Redirecting...';
+                                window.location.href = originalPath;
+                                return;
+                            }
                         }
                     }
                 })
@@ -102,27 +107,23 @@ const loadingHTML = `<!DOCTYPE html>
 `
 
 type loadingPageData struct {
-	ServiceName  string
-	Message      string
-	Path         string
-	OriginalPath string
+	ServiceName string
+	Message     string
 }
 
 func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState, message string) {
-	if message == "" {
-		message = fmt.Sprintf("Container for %s is starting, please wait...", svc.Config.Name)
+	serviceName := "Service"
+	if svc != nil {
+		serviceName = svc.Config.Name
 	}
 
-	path := r.URL.RequestURI()
-	if path == "" {
-		path = "/"
+	if message == "" {
+		message = fmt.Sprintf("Container for %s is starting, please wait...", serviceName)
 	}
 
 	data := loadingPageData{
-		ServiceName:  svc.Config.Name,
-		Message:      message,
-		Path:         template.URLQueryEscaper(path),
-		OriginalPath: template.JSEscaper(path),
+		ServiceName: serviceName,
+		Message:     message,
 	}
 
 	tmpl, err := template.New("loading").Parse(loadingHTML)
@@ -139,4 +140,31 @@ func serveLoadingPage(w http.ResponseWriter, r *http.Request, svc *ServiceState,
 	if err := tmpl.Execute(w, data); err != nil {
 		log.Printf("write loading page error: %v", err)
 	}
+}
+
+// HandleStartupPage serves the loading page for the /__conslee_startup__ path.
+// The original path and service name are read from query parameters.
+func (c *Conslee) HandleStartupPage(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != StartupPath {
+		http.NotFound(w, r)
+		return
+	}
+
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		path = "/"
+	}
+	serviceName := r.URL.Query().Get("service")
+
+	var svc *ServiceState
+	if serviceName != "" {
+		if s, ok := c.reg.GetByName(serviceName); ok {
+			svc = s
+		}
+	}
+
+	_ = path // path is used in JS via query parameter
+
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	serveLoadingPage(w, r, svc, "")
 }

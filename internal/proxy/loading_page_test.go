@@ -11,7 +11,7 @@ import (
 	"conslee/internal/config"
 )
 
-func TestLoadingPage_ReturnsHTMLForBrowserRequest(t *testing.T) {
+func TestStartupPage_RedirectsToStartupPath(t *testing.T) {
 	c := newTestConslee(t)
 	_ = c.rt.(*mockContainerRuntime)
 
@@ -36,19 +36,119 @@ func TestLoadingPage_ReturnsHTMLForBrowserRequest(t *testing.T) {
 
 	c.ServeHTTP(rec, req)
 
+	if rec.Code != http.StatusFound {
+		t.Fatalf("expected 302 redirect, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	location := rec.Header().Get("Location")
+	if !strings.Contains(location, StartupPath) {
+		t.Errorf("expected redirect to %s, got %s", StartupPath, location)
+	}
+	if !strings.Contains(location, "path=%2F") {
+		t.Errorf("expected path query param in Location, got %s", location)
+	}
+	if !strings.Contains(location, "service=webapp") {
+		t.Errorf("expected service query param in Location, got %s", location)
+	}
+}
+
+func TestStartupPage_Handler(t *testing.T) {
+	c := newTestConslee(t)
+	_ = c.rt.(*mockContainerRuntime)
+
+	targetURL, _ := url.Parse("http://localhost:3000")
+	c.reg.Add("webapp.local", &ServiceState{
+		Config: config.ServiceConfig{
+			Name:           "webapp",
+			Host:           "webapp.local",
+			Containers:     []string{"webapp-container"},
+			TargetURL:      "http://localhost:3000",
+			Mode:           "on_demand",
+			StartupTimeout: 30 * time.Second,
+		},
+		Target:       targetURL,
+		LastActivity: time.Now(),
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fdashboard&service=webapp", nil)
+
+	c.HandleStartupPage(rec, req)
+
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
 	body := rec.Body.String()
-	if !strings.Contains(body, "Starting webapp") {
-		t.Errorf("expected loading page with 'Starting webapp', got: %s", body)
+	if !strings.Contains(body, "loading-container") {
+		t.Errorf("expected loading-container in HTML, got: %s", body)
 	}
 	if !strings.Contains(body, "window.location.href") {
-		t.Errorf("expected window.location.href in loading page, got: %s", body)
+		t.Errorf("expected window.location.href in HTML, got: %s", body)
 	}
-	if rec.Header().Get("Content-Type") != "text/html; charset=utf-8" {
-		t.Errorf("expected text/html content type, got %s", rec.Header().Get("Content-Type"))
+	if !strings.Contains(body, "Starting webapp") {
+		t.Errorf("expected 'Starting webapp' in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "/api/services") {
+		t.Errorf("expected /api/services polling in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "URLSearchParams") {
+		t.Errorf("expected URLSearchParams in HTML, got: %s", body)
+	}
+}
+
+func TestStartupPage_HandlerWithPath(t *testing.T) {
+	c := newTestConslee(t)
+	_ = c.rt.(*mockContainerRuntime)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, StartupPath+"?path=%2Fsome%2Fpage&service=nonexistent", nil)
+
+	c.HandleStartupPage(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "loading-container") {
+		t.Errorf("expected loading-container in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "Starting Service") {
+		t.Errorf("expected 'Starting Service' in HTML, got: %s", body)
+	}
+}
+
+func TestStartupPage_HandlerNoPath(t *testing.T) {
+	c := newTestConslee(t)
+	_ = c.rt.(*mockContainerRuntime)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, StartupPath, nil)
+
+	c.HandleStartupPage(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "loading-container") {
+		t.Errorf("expected loading-container in HTML, got: %s", body)
+	}
+}
+
+func TestStartupPage_WrongPath(t *testing.T) {
+	c := newTestConslee(t)
+	_ = c.rt.(*mockContainerRuntime)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/wrong-path", nil)
+
+	c.HandleStartupPage(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
 	}
 }
 
@@ -77,8 +177,8 @@ func TestLoadingPage_NotShownForAPIRequest(t *testing.T) {
 
 	c.ServeHTTP(rec, req)
 
-	if rec.Code == http.StatusOK && strings.Contains(rec.Body.String(), "loading-spinner") {
-		t.Errorf("API request should not get loading page, got HTML: %s", rec.Body.String())
+	if rec.Code == http.StatusFound {
+		t.Errorf("API request should not redirect to startup page, got redirect to: %s", rec.Header().Get("Location"))
 	}
 }
 
@@ -111,48 +211,8 @@ func TestLoadingPage_NotShownWhenAlreadyRunning(t *testing.T) {
 
 	c.ServeHTTP(rec, req)
 
-	if rec.Code == http.StatusOK && strings.Contains(rec.Body.String(), "loading-spinner") {
-		t.Errorf("should not show loading page when already running, got: %s", rec.Body.String())
-	}
-}
-
-func TestLoadingPage_ContainsSpinner(t *testing.T) {
-	c := newTestConslee(t)
-	_ = c.rt.(*mockContainerRuntime)
-
-	targetURL, _ := url.Parse("http://localhost:3000")
-	c.reg.Add("webapp.local", &ServiceState{
-		Config: config.ServiceConfig{
-			Name:           "webapp",
-			Host:           "webapp.local",
-			Containers:     []string{"webapp-container"},
-			TargetURL:      "http://localhost:3000",
-			Mode:           "on_demand",
-			StartupTimeout: 30 * time.Second,
-		},
-		Target:       targetURL,
-		LastActivity: time.Now(),
-	})
-
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("Accept", "text/html")
-	req.Host = "webapp.local"
-
-	c.ServeHTTP(rec, req)
-
-	body := rec.Body.String()
-	if !strings.Contains(body, "loading-spinner") {
-		t.Errorf("expected spinner in loading page, got: %s", body)
-	}
-	if !strings.Contains(body, "window.location.href") {
-		t.Errorf("expected window.location.href in loading page, got: %s", body)
-	}
-	if !strings.Contains(body, "/api/services/") {
-		t.Errorf("expected /api/services/ polling in loading page, got: %s", body)
-	}
-	if !strings.Contains(body, "Redirecting...") {
-		t.Errorf("expected 'Redirecting...' in loading page, got: %s", body)
+	if rec.Code == http.StatusFound {
+		t.Errorf("should not redirect to startup page when already running, got: %s", rec.Header().Get("Location"))
 	}
 }
 
