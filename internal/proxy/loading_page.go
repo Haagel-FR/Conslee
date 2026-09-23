@@ -89,7 +89,7 @@ const loadingHTML = `<!DOCTYPE html>
                 .then(function(services) {
                     for (var i = 0; i < services.length; i++) {
                         if (serviceName === '' || services[i].name === serviceName) {
-                            if (services[i].running === true) {
+                            if (services[i].healthy === true) {
                                 titleEl.textContent = 'Redirecting...';
                                 window.location.href = originalPath;
                                 return;

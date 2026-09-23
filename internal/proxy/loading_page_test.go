@@ -95,6 +95,12 @@ func TestStartupPage_Handler(t *testing.T) {
 	if !strings.Contains(body, "URLSearchParams") {
 		t.Errorf("expected URLSearchParams in HTML, got: %s", body)
 	}
+	if !strings.Contains(body, "services[i].healthy === true") {
+		t.Errorf("expected 'services[i].healthy === true' in HTML polling logic, got: %s", body)
+	}
+	if strings.Contains(body, "services[i].running === true") {
+		t.Errorf("expected no 'services[i].running === true' in HTML polling logic, got: %s", body)
+	}
 }
 
 func TestStartupPage_HandlerWithPath(t *testing.T) {

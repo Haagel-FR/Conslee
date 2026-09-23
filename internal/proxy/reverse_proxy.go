@@ -138,7 +138,8 @@ func (c *Conslee) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "backend unavailable", http.StatusBadGateway)
 			return
 		}
-	}
+		svc.Healthy = true
+		}
 
 	if svc.Target == nil {
 		http.Error(w, "service has no target configured", http.StatusServiceUnavailable)

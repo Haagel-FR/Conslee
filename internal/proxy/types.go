@@ -43,6 +43,7 @@ type ServiceState struct {
 	Target       *url.URL
 	LastActivity time.Time
 	Schedule     *ServiceSchedule
+	Healthy      bool
 }
 
 // DTOs
@@ -61,6 +62,7 @@ type ServiceStatusDTO struct {
 	Mode           string              `json:"mode"`
 	Enabled        bool                `json:"enabled"`
 	Running        bool                `json:"running"`
+	Healthy        bool                `json:"healthy"`
 	LastActivity   time.Time           `json:"lastActivity"`
 	IdleTimeout    string              `json:"idleTimeout"`
 	StartupTimeout string              `json:"startupTimeout"`
