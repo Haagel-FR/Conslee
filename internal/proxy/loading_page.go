@@ -55,12 +55,58 @@ const loadingHTML = `<!DOCTYPE html>
             border-radius: 50%;
             animation: loading-spin 0.8s linear infinite;
         }
+        .loading-steps {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0 0 0;
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.8;
+        }
+        .loading-step {
+            position: relative;
+            padding: 4px 0 4px 28px;
+            transition: color 0.3s ease;
+        }
+        .loading-step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            border: 2px solid #4b5563;
+            border-radius: 50%;
+            background: transparent;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+        .loading-step-active {
+            color: #f9fafb;
+            font-weight: 500;
+        }
+        .loading-step-active::before {
+            border-color: #7c3aed;
+            background: radial-gradient(circle, #7c3aed 30%, transparent 31%);
+            animation: loading-step-pulse 1.5s ease-in-out infinite;
+        }
+        .loading-step-completed {
+            color: #10b981;
+        }
+        .loading-step-completed::before {
+            border-color: #10b981;
+            background: #10b981;
+        }
         @keyframes loading-spin {
             to { transform: rotate(360deg); }
         }
         @keyframes loading-pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
+        }
+        @keyframes loading-step-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
         }
     </style>
 </head>
@@ -76,21 +122,49 @@ const loadingHTML = `<!DOCTYPE html>
         <h1 class="loading-title">Starting {{ .ServiceName }}</h1>
         <p class="loading-message">{{ .Message }}</p>
         <div class="loading-spinner"></div>
+        <ol class="loading-steps">
+            <li class="loading-step loading-step-active" id="step-starting">Starting service...</li>
+            <li class="loading-step" id="step-waiting">Waiting service...</li>
+            <li class="loading-step" id="step-redirecting">Redirecting...</li>
+        </ol>
     </div>
     <script>
     (function() {
         var params = new URLSearchParams(window.location.search);
         var originalPath = params.get('path') || '/';
         var serviceName = params.get('service') || '';
-        var titleEl = document.querySelector('.loading-title');
+        var stepStarting = document.getElementById('step-starting');
+        var stepWaiting = document.getElementById('step-waiting');
+        var stepRedirecting = document.getElementById('step-redirecting');
+        function updateStep(activeEl) {
+            var steps = [stepStarting, stepWaiting, stepRedirecting];
+            for (var i = 0; i < steps.length; i++) {
+                steps[i].classList.remove('loading-step-active');
+                if (steps[i] === activeEl) {
+                    steps[i].classList.add('loading-step-active');
+                } else if (i < steps.indexOf(activeEl)) {
+                    steps[i].classList.add('loading-step-completed');
+                } else {
+                    steps[i].classList.remove('loading-step-completed');
+                }
+            }
+        }
         function poll() {
             fetch('/api/services')
                 .then(function(r) { return r.json(); })
                 .then(function(services) {
                     for (var i = 0; i < services.length; i++) {
                         if (serviceName === '' || services[i].name === serviceName) {
-                            if (services[i].healthy === true) {
-                                titleEl.textContent = 'Redirecting...';
+                            if (services[i].running === false) {
+                                updateStep(stepStarting);
+                                return;
+                            }
+                            if (services[i].running === true && services[i].healthy === false) {
+                                updateStep(stepWaiting);
+                                return;
+                            }
+                            if (services[i].running === true && services[i].healthy === true) {
+                                updateStep(stepRedirecting);
                                 window.location.href = originalPath;
                                 return;
                             }

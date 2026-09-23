@@ -98,8 +98,40 @@ func TestStartupPage_Handler(t *testing.T) {
 	if !strings.Contains(body, "services[i].healthy === true") {
 		t.Errorf("expected 'services[i].healthy === true' in HTML polling logic, got: %s", body)
 	}
-	if strings.Contains(body, "services[i].running === true") {
-		t.Errorf("expected no 'services[i].running === true' in HTML polling logic, got: %s", body)
+	if !strings.Contains(body, "services[i].running === true") {
+		t.Errorf("expected 'services[i].running === true' in HTML polling logic, got: %s", body)
+	}
+
+	// 3-step progress assertions
+	if !strings.Contains(body, "loading-steps") {
+		t.Errorf("expected 'loading-steps' class in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "loading-step") {
+		t.Errorf("expected 'loading-step' class in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "loading-step-active") {
+		t.Errorf("expected 'loading-step-active' class in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "loading-step-completed") {
+		t.Errorf("expected 'loading-step-completed' in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "Starting service...") {
+		t.Errorf("expected 'Starting service...' step text in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "Waiting service...") {
+		t.Errorf("expected 'Waiting service...' step text in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "Redirecting...") {
+		t.Errorf("expected 'Redirecting...' step text in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "step-starting") {
+		t.Errorf("expected 'step-starting' id in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "step-waiting") {
+		t.Errorf("expected 'step-waiting' id in HTML, got: %s", body)
+	}
+	if !strings.Contains(body, "step-redirecting") {
+		t.Errorf("expected 'step-redirecting' id in HTML, got: %s", body)
 	}
 }
 
